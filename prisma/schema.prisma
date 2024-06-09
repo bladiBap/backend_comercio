@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model producto{
+  id                Int         @id @default(autoincrement())
+  nombre            String
+  fk_categoria      Int      
+  descripcion       String
+  precio            Float
+  stock             Int
+  peso              Float
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  categoria         categoria   @relation(fields: [fk_categoria], references: [id], onDelete: Cascade)
+  imagenes          imagen[]
+  detalles          detalle[]
+}
+
+model categoria{
+  id                Int         @id @default(autoincrement())
+  nombre            String
+  descripcion       String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  productos         producto[]
+}
+
+model imagen{
+  id                Int         @id @default(autoincrement())
+  img_url           String
+  fk_producto       Int
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  producto          producto    @relation(fields: [fk_producto], references: [id], onDelete: Cascade)
+}
+
+model usuario{
+  id                Int         @id @default(autoincrement())
+  nombre            String
+  apellido          String
+  telefono          String
+  direccion         String
+  img_url           String
+  email             String      @unique
+  password          String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  pedidos           pedido[]
+}
+
+model pedido{
+  id                Int         @id @default(autoincrement())
+  fk_usuario        Int
+  ticket            String
+  completado        Boolean
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  usuario           usuario     @relation(fields: [fk_usuario], references: [id], onDelete: Cascade)
+  detalles          detalle[]
+}
+
+model detalle{
+  id                Int         @id @default(autoincrement())
+  fk_pedido         Int
+  fk_producto       Int
+  cantidad          Int
+  precio_unitario   Float
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  pedido            pedido      @relation(fields: [fk_pedido], references: [id], onDelete: Cascade)
+  producto          producto    @relation(fields: [fk_producto], references: [id], onDelete: Cascade)
+}
