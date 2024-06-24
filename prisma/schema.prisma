@@ -16,27 +16,16 @@ datasource db {
 model producto{
   id                Int         @id @default(autoincrement())
   nombre            String
-  fk_categoria      Int      
-  descripcion       String
+  descripcion       String      @db.Text   
   precio            Float
   stock             Int
   peso              Float
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
-  categoria         categoria   @relation(fields: [fk_categoria], references: [id], onDelete: Cascade)
   imagenes          imagen[]
   detalles          detalle[]
-}
-
-model categoria{
-  id                Int         @id @default(autoincrement())
-  nombre            String
-  descripcion       String
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  productos         producto[]
+  carritoitems      carritoitem[]
 }
 
 model imagen{
@@ -47,6 +36,34 @@ model imagen{
   updatedAt         DateTime    @updatedAt
   
   producto          producto    @relation(fields: [fk_producto], references: [id], onDelete: Cascade)
+}
+
+model carrito{
+  id                Int         @id @default(autoincrement())
+  fk_usuario        Int         @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  usuario           usuario     @relation(fields: [fk_usuario], references: [id], onDelete: Cascade)
+  items             carritoitem[]
+}
+
+model carritoitem {
+  id                Int         @id @default(autoincrement())
+  fk_carrito        Int
+  fk_producto       Int
+  cantidad          Int
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  carrito           carrito     @relation(fields: [fk_carrito], references: [id], onDelete: Cascade)
+  producto          producto    @relation(fields: [fk_producto], references: [id], onDelete: Cascade)
+
+}
+
+enum RoleType {
+  ADMIN
+  USER
 }
 
 model usuario{
@@ -60,8 +77,10 @@ model usuario{
   password          String
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+  role              RoleType    @default(USER)
   
   pedidos           pedido[]
+  carrito           carrito?
 }
 
 model pedido{
@@ -69,6 +88,12 @@ model pedido{
   fk_usuario        Int
   ticket            String
   completado        Boolean
+  
+  esdelivery        Boolean     @default(false)
+  direccion         String      @default("")
+  correo            String      @default("")
+  nombre            String      @default("")
+
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   

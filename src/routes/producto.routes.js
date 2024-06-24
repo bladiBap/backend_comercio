@@ -9,6 +9,7 @@ router.get('/get_producto_by_id/:id', productoCtrl.getProductoById);
 router.post('/create_producto', productoCtrl.createProducto);
 router.put('/update_producto/:id', productoCtrl.updateProducto);
 router.delete('/delete_producto/:id', productoCtrl.deleteProducto);
-router.get('/get_productos_by_categoria/:id', productoCtrl.getProductosByCategoria);
+router.get('/buscar_producto', productoCtrl.buscarProducto);
+router.post('/add_imagen_to_producto/:id', productoCtrl.addImagen);
 
 export default router;

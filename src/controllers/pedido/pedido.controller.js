@@ -1,6 +1,7 @@
 import db from '../../db.js';
 import response from '../../utils/response.js';
 import * as imageUtils from '../../utils/image.js';
+import * as functions from '../../utils/functions.js';
 
 export async function getPedidoById(req, res) {
     try {
@@ -20,48 +21,69 @@ export async function getPedidoById(req, res) {
     } catch (error) {
         console.error(error);
         return response(res, 500, null, `Error al obtener el pedido: ${error}`, false);
+    }finally {
+        db.$disconnect();
     }
 }
 
 export async function createPedido(req, res) {
     try{
-        const {detalles, id_usuario} = req.body;
-        if(!detalles || !id_usuario){
-            return response(res, 400, null, 'Los detalles y el id del usuario son obligatorios', false);
+        const {fk_carrito } = req.body;
+        if(!fk_carrito || isNaN(fk_carrito)){
+            return response(res, 400, null, 'El id del carrito es obligatorio y debe ser un número', false);
         }
 
-        if(!validarDetalleBody(req, res)){
-            return;
-        }
-
-        
-
-        const pedido = await db.pedido.create({
-            data: {
-                fk_usuario: parseInt(id_usuario),
-
-            }
+        const carrito = await db.carrito.findUnique({
+            where: {
+                id: Number(fk_carrito),
+            },
+            include: {
+                items: {
+                    include: {
+                        producto: true,
+                    },
+                },
+            },
         });
 
-        for (const detalle of detalles){
-            const producto = await db.producto.findUnique({
-                where: {
-                    id: detalle.id_producto
-                }
-            });
-            if(!producto){
-                return response(res, 404, null, `Producto con id ${detalle.id_producto} no encontrado`, false);
-            }
-            if(producto.stock < detalle.cantidad){
-                return response(res, 400, null, `No hay suficiente stock para el producto ${producto.nombre}`, false);
-            }
+        if(!carrito){
+            return response(res, 404, null, 'Carrito no encontrado', false);
         }
 
+        if(carrito.items.length === 0){
+            return response(res, 400, null, 'El carrito no tiene productos', false);
+        }
+        let ticket = functions.generarTicketPedido();
+        const pedido = await db.pedido.create({
+            data: {
+                fk_usuario: carrito.fk_usuario,
+                ticket,
+                completado: false
+            },
+        });
 
+        for(const item of carrito.items){
+            await db.detalle.create({
+                data: {
+                    fk_pedido: pedido.id,
+                    fk_producto: item.fk_producto,
+                    cantidad: item.cantidad,
+                    precio_unitario: item.producto.precio,
+                },
+            });
+        }
 
+        await db.carritoItem.deleteMany({
+            where: {
+                fk_carrito: carrito.id,
+            },
+        });
+        return response(res, 201, pedido, 'Pedido creado correctamente');
     }catch(error){
         console.error(error);
         return response(res, 500, null, `Error al crear el pedido: ${error}`, false);
+    }finally {
+        db.$disconnect();
     }
 }
 
