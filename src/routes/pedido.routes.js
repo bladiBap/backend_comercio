@@ -6,3 +6,5 @@ const router = Router();
 
 router.get('/get_pedido_by_id/:id', pedidoCtrl.getPedidoById);
 router.post('/create_pedido', pedidoCtrl.createPedido);
+
+export default router;

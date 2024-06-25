@@ -2,6 +2,7 @@ import db from '../../db.js';
 import response from '../../utils/response.js';
 import * as imageUtils from '../../utils/image.js';
 import * as functions from '../../utils/functions.js';
+import transporter from '../../utils/email.js';
 
 export async function getPedidoById(req, res) {
     try {
@@ -28,57 +29,65 @@ export async function getPedidoById(req, res) {
 
 export async function createPedido(req, res) {
     try{
-        const {fk_carrito } = req.body;
-        if(!fk_carrito || isNaN(fk_carrito)){
-            return response(res, 400, null, 'El id del carrito es obligatorio y debe ser un número', false);
-        }
 
-        const carrito = await db.carrito.findUnique({
-            where: {
-                id: Number(fk_carrito),
-            },
-            include: {
-                items: {
-                    include: {
-                        producto: true,
-                    },
-                },
-            },
-        });
+        // let info = await transporter.sendMail({
+        //     from: 'Horneatitos Shop <horneatitosshop@gmail.com>',
+        //     to: 'bladimirbaptistagonzales@gmail.com',
+        //     subject: 'Nuevo pedido',
+        //     html: `<h1>Se ha realizado un nuevo pedido</h1>`
+        // });
+        return response(res, 200, info, 'Pedido creado correctamente');
+        // const {fk_carrito } = req.body;
+        // if(!fk_carrito || isNaN(fk_carrito)){
+        //     return response(res, 400, null, 'El id del carrito es obligatorio y debe ser un número', false);
+        // }
 
-        if(!carrito){
-            return response(res, 404, null, 'Carrito no encontrado', false);
-        }
+        // const carrito = await db.carrito.findUnique({
+        //     where: {
+        //         id: Number(fk_carrito),
+        //     },
+        //     include: {
+        //         items: {
+        //             include: {
+        //                 producto: true,
+        //             },
+        //         },
+        //     },
+        // });
 
-        if(carrito.items.length === 0){
-            return response(res, 400, null, 'El carrito no tiene productos', false);
-        }
-        let ticket = functions.generarTicketPedido();
-        const pedido = await db.pedido.create({
-            data: {
-                fk_usuario: carrito.fk_usuario,
-                ticket,
-                completado: false
-            },
-        });
+        // if(!carrito){
+        //     return response(res, 404, null, 'Carrito no encontrado', false);
+        // }
 
-        for(const item of carrito.items){
-            await db.detalle.create({
-                data: {
-                    fk_pedido: pedido.id,
-                    fk_producto: item.fk_producto,
-                    cantidad: item.cantidad,
-                    precio_unitario: item.producto.precio,
-                },
-            });
-        }
+        // if(carrito.items.length === 0){
+        //     return response(res, 400, null, 'El carrito no tiene productos', false);
+        // }
+        // let ticket = functions.generarTicketPedido();
+        // const pedido = await db.pedido.create({
+        //     data: {
+        //         fk_usuario: carrito.fk_usuario,
+        //         ticket,
+        //         completado: false
+        //     },
+        // });
 
-        await db.carritoItem.deleteMany({
-            where: {
-                fk_carrito: carrito.id,
-            },
-        });
-        return response(res, 201, pedido, 'Pedido creado correctamente');
+        // for(const item of carrito.items){
+        //     await db.detalle.create({
+        //         data: {
+        //             fk_pedido: pedido.id,
+        //             fk_producto: item.fk_producto,
+        //             cantidad: item.cantidad,
+        //             precio_unitario: item.producto.precio,
+        //         },
+        //     });
+        // }
+
+        // await db.carritoItem.deleteMany({
+        //     where: {
+        //         fk_carrito: carrito.id,
+        //     },
+        // });
+        // return response(res, 201, pedido, 'Pedido creado correctamente');
     }catch(error){
         console.error(error);
         return response(res, 500, null, `Error al crear el pedido: ${error}`, false);

@@ -8,6 +8,7 @@ import productoRoutes from './routes/producto.routes.js';
 import usuarioRoutes from './routes/usuario.routes.js';
 import helloRoutes from './routes/hello.routes.js';
 import carritoRoutes from './routes/carrito.routes.js';
+import pedidoRoutes from './routes/pedido.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,7 @@ app.use(productoRoutes);
 app.use(usuarioRoutes);
 app.use(helloRoutes);
 app.use(carritoRoutes);
+app.use(pedidoRoutes);
 
 app.listen(process.env.PORT || 4000);
 console.log('Server on port', process.env.PORT || 4000);
