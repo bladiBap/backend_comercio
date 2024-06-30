@@ -36,58 +36,67 @@ export async function createPedido(req, res) {
         //     subject: 'Nuevo pedido',
         //     html: `<h1>Se ha realizado un nuevo pedido</h1>`
         // });
-        return response(res, 200, info, 'Pedido creado correctamente');
-        // const {fk_carrito } = req.body;
-        // if(!fk_carrito || isNaN(fk_carrito)){
-        //     return response(res, 400, null, 'El id del carrito es obligatorio y debe ser un número', false);
-        // }
+        // return response(res, 200, info, 'Pedido creado correctamente');
+        const {fk_carrito } = req.body;
+        if(!fk_carrito || isNaN(fk_carrito)){
+            return response(res, 400, null, 'El id del carrito es obligatorio y debe ser un número', false);
+        }
 
-        // const carrito = await db.carrito.findUnique({
-        //     where: {
-        //         id: Number(fk_carrito),
-        //     },
-        //     include: {
-        //         items: {
-        //             include: {
-        //                 producto: true,
-        //             },
-        //         },
-        //     },
-        // });
+        const carrito = await db.carrito.findUnique({
+            where: {
+                id: Number(fk_carrito),
+            },
+            include: {
+                items: {
+                    include: {
+                        producto: true,
+                    },
+                },
+            },
+        });
 
-        // if(!carrito){
-        //     return response(res, 404, null, 'Carrito no encontrado', false);
-        // }
+        if(!carrito){
+            return response(res, 404, null, 'Carrito no encontrado', false);
+        }
 
-        // if(carrito.items.length === 0){
-        //     return response(res, 400, null, 'El carrito no tiene productos', false);
-        // }
-        // let ticket = functions.generarTicketPedido();
-        // const pedido = await db.pedido.create({
-        //     data: {
-        //         fk_usuario: carrito.fk_usuario,
-        //         ticket,
-        //         completado: false
-        //     },
-        // });
-
-        // for(const item of carrito.items){
-        //     await db.detalle.create({
-        //         data: {
-        //             fk_pedido: pedido.id,
-        //             fk_producto: item.fk_producto,
-        //             cantidad: item.cantidad,
-        //             precio_unitario: item.producto.precio,
-        //         },
-        //     });
-        // }
-
-        // await db.carritoItem.deleteMany({
-        //     where: {
-        //         fk_carrito: carrito.id,
-        //     },
-        // });
-        // return response(res, 201, pedido, 'Pedido creado correctamente');
+        if(carrito.items.length === 0){
+            return response(res, 400, null, 'El carrito no tiene productos', false);
+        }
+        let ticket = functions.generarTicketPedido();
+        const pedido = await db.pedido.create({
+            data: {
+                fk_usuario: carrito.fk_usuario,
+                ticket,
+                completado: false
+            },
+        });
+        let total = 0;
+        for(const item of carrito.items){
+            total += item.producto.precio * item.cantidad;
+            await db.detalle.create({
+                data: {
+                    fk_pedido: pedido.id,
+                    fk_producto: item.fk_producto,
+                    cantidad: item.cantidad,
+                    precio_unitario: item.producto.precio,
+                },
+            });
+        }
+        await db.pedido.update({
+            where: {
+                id: pedido.id,
+            },
+            data: {
+                total,
+            }
+        });
+        
+        await db.carritoitem.deleteMany({
+            where: {
+                fk_carrito: carrito.id,
+            },
+        });
+        return response(res, 201, pedido, 'Pedido creado correctamente');
     }catch(error){
         console.error(error);
         return response(res, 500, null, `Error al crear el pedido: ${error}`, false);

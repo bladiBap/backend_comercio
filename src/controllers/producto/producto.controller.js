@@ -30,16 +30,26 @@ export async function getProductoById(req, res) {
 
 export async function getProductos(req, res) {
     try {
+        const {page, pageSize} = req.query;
+        const totalPorductos = await db.producto.count();
         const productos = await db.producto.findMany(
             {
                 include: {
-                    imagenes: {
+                    imagenes: (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? {
                         take: 1
-                    }
+                    } : true
                 },
+                skip: (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? 
+                    undefined : ((parseInt(page) - 1) * parseInt(pageSize)),
+                take: (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? 
+                    undefined : parseInt(pageSize)
             }
         );
-        return response(res, 200, productos, 'Productos obtenidos correctamente');
+        return response(res, 200, {
+            productos,
+            total_pages : (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ?
+            1 : Math.ceil(totalPorductos / parseInt(pageSize))
+        }, 'Productos obtenidos correctamente');
     } catch (error) {
         console.error(error);
         return response(res, 500, null, `Error al obtener los productos: ${error}`, false);

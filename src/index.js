@@ -18,7 +18,6 @@ app.use(fileUpload({
         useTempFiles: true,
         tempFileDir: './public/imagenes/temp'
 }));
-app.use(express.static('public'));
 app.use('/public', express.static('public'));
 // use routes
 app.use(productoRoutes);

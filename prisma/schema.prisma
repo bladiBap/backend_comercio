@@ -88,6 +88,7 @@ model pedido{
   fk_usuario        Int
   ticket            String
   completado        Boolean
+  total             Float       @default(0)
   
   esdelivery        Boolean     @default(false)
   direccion         String      @default("")

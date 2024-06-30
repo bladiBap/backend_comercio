@@ -151,3 +151,111 @@ export const login = async (req, res) => {
         db.$disconnect();
     }
 }
+
+export const updateUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, apellido, telefono, direccion, email } = req.body;
+        if (!id || isNaN(id)) {
+            return response(res, 400, null, 'El id del usuario es obligatorio y debe ser un número', false);
+        }
+        const usuario = await db.usuario.findUnique({
+            where: {
+                id: Number(id),
+            },
+        });
+        if (!usuario) {
+            return response(res, 404, null, 'Usuario no encontrado', false);
+        }
+        const existeCorreo = await db.usuario.findFirst({
+            where: {
+                email: email,
+                id: {
+                    not: usuario.id,
+                },
+            },
+        });
+        if (existeCorreo) {
+            return response(res, 400, null, 'El correo ya esta en uso', false);
+        }
+        const imagen = req.files?.imagen;
+        let pathImagen = usuario.img_url;
+        if (imagen !== undefined) {
+            pathImagen = await imageUtils.guardarImagen('usuarios', imagen, `imagen_${id}`, pathImagen);
+        }
+        const usuarioUpdate = await db.usuario.update({
+            where: {
+                id: Number(id),
+            },
+            data: {
+                nombre: nombre || usuario.nombre,
+                apellido: apellido || usuario.apellido,
+                telefono: telefono || usuario.telefono,
+                direccion: direccion || usuario.direccion,
+                email: email || usuario.email,
+                img_url: pathImagen
+            },
+        });
+        usuarioUpdate.password = undefined;
+        return response(res, 200, usuarioUpdate, 'Usuario actualizado correctamente');
+    }catch (error) {
+        console.error(error);
+        return response(res, 500, null, `Error al actualizar el usuario: ${error}`, false);
+    }finally {
+        db.$disconnect();
+    }
+}
+
+export const getMyInfo = async (req, res) => {
+    try {
+        const {id} = req.params;
+        if(isNaN(id)){
+            return response(res, 400, null, 'El id del usuario debe ser un número', false);
+        }
+        const usuario = await db.usuario.findUnique({
+            where: {
+                id: Number(id),
+            },
+        });
+
+        if (!usuario) {
+            return response(res, 404, null, 'Usuario no encontrado', false);
+        }
+
+        usuario.password = undefined;
+
+        const pedidos = await db.pedido.findMany({
+            where: {
+                fk_usuario: usuario.id,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            include: {
+                detalles: {
+                    include: {
+                        producto: {
+                            include: {
+                                imagenes: {
+                                    take: 1,
+                                }
+                            },
+                        }
+                    },
+                },
+            },
+        });
+
+        const info = {
+            usuario,
+            pedidos,
+        };
+
+        return response(res, 200, info, 'Informacion obtenida correctamente');
+    }catch (error) {
+        console.error(error);
+        return response(res, 500, null, `Ocurrio un error al intentar obtener la infomracion del usuario ${error}`, false);
+    }finally {
+        db.$disconnect();
+    }
+}

@@ -9,5 +9,7 @@ router.post('/create_usuario', usuarioCtrl.createUsuario);
 router.get('/get_usuario_by_id/:id', usuarioCtrl.getUsuarioById);
 router.get('/get_user_by_token', usuarioCtrl.getUserByToken);
 router.post('/login', usuarioCtrl.login);
+router.put('/update_usuario/:id', usuarioCtrl.updateUsuario);
+router.get('/get_usuario_info/:id', usuarioCtrl.getMyInfo);
 
 export default router;

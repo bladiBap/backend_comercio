@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `pedido` ADD COLUMN `total` DOUBLE NOT NULL DEFAULT 0;
