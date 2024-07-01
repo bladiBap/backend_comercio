@@ -236,10 +236,19 @@ export async function deleteProducto(req, res) {
 export async function buscarProducto (req, res){
     try{
 
-        const texto = req.query.texto;
+        const {texto, page, pageSize} = req.query;
+
         if (!texto || texto.trim() === '') {
             return response(res, 400, null, 'El texto es obligatorio', false);
         }
+
+        const totalCoincidencias = await db.producto.count({
+            where: {
+                nombre: {
+                    contains: texto
+                }
+            }
+        });
 
         const productos = await db.producto.findMany({
             select: {
@@ -258,11 +267,66 @@ export async function buscarProducto (req, res){
                     contains: texto
                 }
             },
+            skip: (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? 
+                undefined : ((parseInt(page) - 1) * parseInt(pageSize)),
+            take: (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? 
+                undefined : parseInt(pageSize)
         });
-        return response(res, 200, productos, 'Productos obtenidos correctamente');
+        return response(res, 200, {
+            productos,
+            total_pages : (isNaN(page) || isNaN(pageSize) || page==='' || pageSize==='') ? 
+            1 : Math.ceil(totalCoincidencias / parseInt(pageSize))
+        }, 'Productos obtenidos correctamente');
     } catch (error ){
         console.error(error)
         return response(res, 500, null, `Error al buscar el producto: ${error}`, false);
+    }finally {
+        db.$disconnect();
+    }
+}
+
+export async function deleteManyImages (req, res){
+    try {
+        const { id } = req.params;
+        const { ids } = req.body;
+        console.log(req.body);
+        if (!id || isNaN(id)) {
+            return response(res, 400, null, 'El id del producto es obligatorio y debe ser un número', false);
+        }
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return response(res, 400, null, 'Los ids de las imagenes son obligatorios y deben ser un array', false);
+        }
+
+        const imagenes = await db.imagen.findMany({
+            where: {
+                id: {
+                    in: ids,
+                },
+                fk_producto: Number(id),
+            },
+        });
+
+        if (imagenes.length === 0) {
+            return response(res, 404, null, 'Imagenes no encontradas', false);
+        }
+
+        for (const imagen of imagenes) {
+            await imageUtils.eliminarImagen(imagen.img_url);
+        }
+
+        await db.imagen.deleteMany({
+            where: {
+                id: {
+                    in: ids,
+                },
+            },
+        });
+
+        return response(res, 200, null, 'Imagenes eliminadas correctamente');
+    } catch (error) {
+        console.error(error);
+        return response(res, 500, null, `Error al eliminar las imagenes: ${error}`, false);
     }finally {
         db.$disconnect();
     }

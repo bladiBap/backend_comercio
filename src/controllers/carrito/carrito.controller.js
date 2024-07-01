@@ -4,7 +4,8 @@ import paypal from '@paypal/checkout-server-sdk';
 
 const clientId = process.env.PAYPAL_CLIENT_ID
 const clientdSecret = process.env.PAYPAL_CLIENT_SECRET
-const environment = new paypal.core.SandboxEnvironment(clientId, clientdSecret);
+// production
+const environment = new paypal.core.LiveEnvironment(clientId, clientdSecret);
 const client = new paypal.core.PayPalHttpClient(environment);
 
 export async function getCarritoById(req, res) {
@@ -290,7 +291,7 @@ export async function checkOut (req, res) {
         });
 
         const respond = await client.execute(request);
-        return response(res, 200, {id: respond.result.id}, 'Pago procesado correctamente');
+        return response(res, 200, {id: respond.result.id}, 'Pago creado correctamente');
     } catch (error) {
         console.error(error);
         return response(res, 500, null, `Error al procesar el pago: ${error}`, false);

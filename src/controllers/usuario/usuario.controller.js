@@ -152,6 +152,35 @@ export const login = async (req, res) => {
     }
 }
 
+export const loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return response(res, 400, null, 'El correo y la contraseña son obligatorios', false);
+        }
+        const usuario = await db.usuario.findFirst({
+            where: {
+                email: email,
+                role: 'ADMIN',
+            },
+        });
+        if (!usuario) {
+            return response(res, 404, null, 'Usuario no encontrado', false);
+        }
+        const contrasenaValida = await bycript.compare(password, usuario.password);
+        if (!contrasenaValida) return response(res, 400, null, 'Correo o contraseña incorrectos', false);
+        usuario.password = undefined;
+        const token = generarJWT(usuario.id, usuario.email);
+        return response(res, 200, { token, usuario }, 'Sesión iniciada');
+    } catch (error) {
+        console.error(error);
+        return response(res, 500, null, `Error al iniciar sesión: ${error}`, false);
+    }finally {
+        db.$disconnect();
+    }
+
+}
+
 export const updateUsuario = async (req, res) => {
     try {
         const { id } = req.params;
@@ -197,6 +226,12 @@ export const updateUsuario = async (req, res) => {
             },
         });
         usuarioUpdate.password = undefined;
+        const carrito = await db.carrito.findFirst({
+            where: {
+                fk_usuario: usuario.id,
+            },
+        });
+        usuarioUpdate.fk_carrito = carrito.id;
         return response(res, 200, usuarioUpdate, 'Usuario actualizado correctamente');
     }catch (error) {
         console.error(error);

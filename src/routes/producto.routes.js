@@ -11,5 +11,6 @@ router.put('/update_producto/:id', productoCtrl.updateProducto);
 router.delete('/delete_producto/:id', productoCtrl.deleteProducto);
 router.get('/buscar_producto', productoCtrl.buscarProducto);
 router.post('/add_imagen_to_producto/:id', productoCtrl.addImagen);
+router.delete('/delete_imagenes_producto/:id', productoCtrl.deleteManyImages);
 
 export default router;
