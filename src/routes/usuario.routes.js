@@ -2,7 +2,6 @@ import {Router} from 'express';
 
 import * as usuarioCtrl from '../controllers/usuario/usuario.controller.js';
 
-
 const router = Router();
 
 router.post('/create_usuario', usuarioCtrl.createUsuario);
