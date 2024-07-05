@@ -4,6 +4,7 @@ import paypal from '@paypal/checkout-server-sdk';
 
 const clientId = process.env.PAYPAL_CLIENT_ID
 const clientdSecret = process.env.PAYPAL_CLIENT_SECRET
+//const environment = new paypal.core.SandboxEnvironment(clientId, clientdSecret);
 // production
 const environment = new paypal.core.LiveEnvironment(clientId, clientdSecret);
 const client = new paypal.core.PayPalHttpClient(environment);

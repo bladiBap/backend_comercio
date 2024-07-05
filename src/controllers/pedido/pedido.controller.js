@@ -92,6 +92,17 @@ export async function createPedido(req, res) {
                     precio_unitario: item.producto.precio,
                 },
             });
+
+            await db.producto.update({
+                where: {
+                    id: item.fk_producto,
+                },
+                data: {
+                    stock: {
+                        decrement: item.cantidad,
+                    },
+                },
+            });
         }
         await db.pedido.update({
             where: {
